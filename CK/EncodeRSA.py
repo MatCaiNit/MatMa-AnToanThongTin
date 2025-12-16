@@ -28,11 +28,13 @@ def demo_rsa_encryption_exchange():
 
     # Ma hoa bang khoa CONG KHAI cua Alice
     cipher_int = rsa_encrypt(message_int, bob_encryption_key)
+    print(f"\n Mã hóa c = {cipher_int}")
     print("Bob: Ma hoa thanh cong va gui ban ma cho Alice.")
 
     # --- 3. ALICE (Người Nhận): Giải mã ---
     # Alice nhan ban ma va giai ma bang khoa BI MAT cua minh
     recovered_int = rsa_decrypt(cipher_int, alice_private_key)
+    print(f"\n Giải mã m = {recovered_int}")
     recovered_message = i2b(recovered_int)
 
     # --- 4. Kết quả ---

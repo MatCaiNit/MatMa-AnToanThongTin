@@ -28,7 +28,7 @@ def elgamal_sign_message(message: bytes, private_key: tuple) -> tuple:
     # 5. Tính s (Thành phần thứ hai của chữ ký)
     # s = k_inv * (m - x*r) mod (p - 1)
     s = (k_inv * (m - x * r)) % (p - 1)
-    
+    print(f"\n r = {r} \n k = {k} \n k^-1 = {k_inv} \n s = {s}")
     return (r, s)
 
 def elgamal_verify_signature(message: bytes, signature: tuple, public_key: tuple) -> bool:
@@ -47,13 +47,14 @@ def elgamal_verify_signature(message: bytes, signature: tuple, public_key: tuple
     # 3. Tính vế trái (Verification Equation)
     # Left = g^m mod p
     left_side = pow(g, m, p)
-    
+
     # 4. Tính vế phải
     # Right = (y^r * r^s) mod p
     y_r = pow(y, r, p)
     r_s = pow(r, s, p)
     right_side = (y_r * r_s) % p
-    
+
+    print(f"\nleft = {left_side} \n y_r = {y_r} \n r_s = {r_s} \n right = {right_side}")
     # 5. So sánh
     return left_side == right_side
 

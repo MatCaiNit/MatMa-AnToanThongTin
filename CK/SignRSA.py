@@ -21,10 +21,12 @@ def demo_rsa_digital_signature():
     # Buoc 1a: Hash thong diep
     message_hash_digest = hashlib.sha256(original_message).digest()
     hash_int = b2i(message_hash_digest)
+    print(hash_int)
     
     # Buoc 1b: Ky bang khoa bi mat (private key)
     # Chu ky duoc tao ra bang cach tinh Hash^d mod n
     signature_int = rsa_sign(hash_int, alice_priv_key)
+    print(f"Sign {signature_int}")
     digital_signature = i2b(signature_int)
     
     print("Alice: Tao chu ky so thanh cong.")

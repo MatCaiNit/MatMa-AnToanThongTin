@@ -104,17 +104,20 @@ def generate_rsa_keypair(prime_bits: int = 2048):
     print(f"\nDang sinh p ({prime_bits}-bit)...")
     p = generate_strong_prime(prime_bits)
     print(f"\r p da duoc sinh. ({prime_bits}-bit).")
-    
+    print(f"\r p = {p}.")
     print(f"Dang sinh q ({prime_bits}-bit)...")
     while True:
         q = generate_strong_prime(prime_bits)
         if q != p:
             break
     print(f"\r q da duoc sinh. ({prime_bits}-bit).")
+    print(f"\r q = {q}.")
     
     # 2. Tính n và phi(n)
     n = p * q
+    print(f"\n n = {n}")
     phi = (p - 1) * (q - 1)
+    print(f"\n phi = {phi}")
 
     # 3. Tính khóa bí mật d
     if math.gcd(e, phi) != 1:
@@ -123,14 +126,17 @@ def generate_rsa_keypair(prime_bits: int = 2048):
          return generate_rsa_keypair(prime_bits)
 
     d = modular_inverse(e, phi)
-
+    print(f"\n d = {d}")
     # 4. Tính các tham số CRT để tăng tốc giải mã
     # dp = d mod (p-1)
     # dq = d mod (q-1)
     # qinv = q^-1 mod p (sử dụng p thay vì n)
     dp = d % (p - 1)
+    print(f"\n dp = {dp}")
     dq = d % (q - 1)
+    print(f"\n dq = {dq}")
     qinv = modular_inverse(q, p)
+    print(f"\n qinv = {qinv}")
 
     public_key = {"n": n, "e": e}
     private_key = {
@@ -148,7 +154,9 @@ def rsa_encrypt_integer(message_int: int, public_key: dict) -> int:
     n, e = public_key["n"], public_key["e"]
     if not (0 <= message_int < n):
         raise ValueError("So nguyen thong diep vuot qua gioi han modulus (n)")
-    return pow(message_int, e, n)
+    c = pow(message_int, e, n)
+    print(f"\n c = {c}")
+    return c
 
 def rsa_decrypt_integer_crt(cipher_int: int, private_key: dict) -> int:
     """
@@ -164,16 +172,17 @@ def rsa_decrypt_integer_crt(cipher_int: int, private_key: dict) -> int:
     # 1. Tính toán modulo p và q
     # m1 = c^dp mod p
     m1 = pow(cipher_int, dp, p)
+    print(f"\n m1 = {m1}")
     # m2 = c^dq mod q
     m2 = pow(cipher_int, dq, q)
-    
+    print(f"\n m2 = {m2}")
     # 2. Áp dụng CRT
     # h = qinv * (m1 - m2) mod p
     h = (qinv * (m1 - m2)) % p
-    
+    print(f"\n h = {h}")
     # m = m2 + h * q
     m = m2 + h * q
-    
+    print(f"\n m = {m}")
     return m
 
 if __name__ == "__main__":

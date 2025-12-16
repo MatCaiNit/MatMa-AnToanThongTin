@@ -2,6 +2,39 @@ import secrets
 import math
 import sys
 
+def factorize(n: int) -> set:
+    """Phân tích n thành các thừa số nguyên tố (chậm, chỉ dùng n nhỏ)."""
+    factors = set()
+    d = 2
+    while d * d <= n:
+        while n % d == 0:
+            factors.add(d)
+            n //= d
+        d += 1
+    if n > 1:
+        factors.add(n)
+    return factors
+
+def find_primitive_root(p: int) -> int:
+    """
+    Tìm phần tử nguyên thủy modulo p (p phải là số nguyên tố nhỏ).
+    """
+    phi = p - 1
+    factors = factorize(phi)
+
+    for g in range(2, p):
+        ok = True
+        for q in factors:
+            if pow(g, phi // q, p) == 1:
+                ok = False
+                print(f"g = {g} không phải phần tử nguyên thủy" )
+                break
+        if ok:
+            return g
+
+    raise ValueError("Không tìm được phần tử nguyên thủy")
+
+
 def is_probable_prime(n: int, rounds: int = 64) -> bool:
     """
     Kiểm tra tính nguyên tố xác suất bằng thuật toán Miller-Rabin.
@@ -74,6 +107,10 @@ def generate_elgamal_keypair(bits: int = 2048):
     
     public_key = (p, g, y)
     private_key = (p, g, x)
+    print(f"\n p = {p}")
+    print(f"\n g = {g}")
+    print(f"\n x = {x}")
+    print(f"\n y = {y}")
     return public_key, private_key
 
 def elgamal_encrypt_message(message_int: int, public_key: tuple) -> tuple:
@@ -93,7 +130,10 @@ def elgamal_encrypt_message(message_int: int, public_key: tuple) -> tuple:
     
     # c2 = m * s mod p
     c2 = (message_int * s) % p
-    
+    print(f"\n k = {k}")
+    print(f"\n c1 = {c1}")
+    print(f"\n s = {s}")
+    print(f"\n c2 = {c2}")
     return (c1, c2)
 
 def elgamal_decrypt_cipher(cipher_pair: tuple, private_key: tuple) -> int:
@@ -103,14 +143,14 @@ def elgamal_decrypt_cipher(cipher_pair: tuple, private_key: tuple) -> int:
     
     # 1. Tinh lai Shared secret: s = c1^x mod p
     s = pow(c1, x, p)
-    
+    print(f"\n s = {s}")
     # 2. Tinh nghich dao cua s: s_inv = s^(-1) mod p
     s_inv = pow(s, -1, p) 
-    
+    print(f"\n s_inv = {s_inv}")
     # 3. Giai ma: m = c2 * s_inv mod p
     # Vi c2 = m * s mod p, suy ra m = c2 * s^(-1) mod p
     m = (c2 * s_inv) % p
-    
+    print(f"\n m = {m}")
     return m
 
 if __name__ == "__main__":

@@ -1,56 +1,62 @@
-import hashlib, os
+# demo_rsa_challenge_response_verbose.py
+import os
+import hashlib
 from RSA import (
-    generate_rsa_keypair as generate_keys,
-    rsa_encrypt_integer as rsa_verify,
-    rsa_decrypt_integer_crt as rsa_sign,
-    bytes_to_integer as b2i,
-    integer_to_bytes as i2b
+    generate_rsa_keypair,
+    rsa_encrypt_integer,
+    rsa_decrypt_integer_crt,
+    bytes_to_integer,
+    integer_to_bytes
 )
 
-def demo_auth_challenge_response():
-    """Minh họa sơ đồ Xưng danh Challenge–Response dùng Chữ ký số RSA."""
+def demo_rsa_challenge_response():
+    print("=== Bước 1: Alice tạo cặp khóa RSA 4096-bit ===")
+    pub, priv = generate_rsa_keypair(prime_bits=2048)
     
-    # --- 1. ALICE (Người xưng danh) ---
-    print("Alice: Dang tao cap khoa RSA 4096-bit...")
-    alice_pub_key, alice_priv_key = generate_keys()
+    print("\nKhóa công khai (Alice):")
+    print(f"  n (modulus, 64 ký tự đầu): {hex(pub['n'])[2:66]}...")
+    print(f"  e = {pub['e']}")
+    print("\nKhóa bí mật (Alice):")
+    print(f"  d (int, 64 ký tự đầu): {hex(priv['d'])[2:66]}...")
+    print(f"  p = {priv['p']}")
+    print(f"  q = {priv['q']}")
+    print(f"  dp = {priv['dp']}")
+    print(f"  dq = {priv['dq']}")
+    print(f"  qinv = {priv['qinv']}")
 
-    # --- 2. BOB (Người xác minh): Tạo Challenge ---
-    challenge_data = os.urandom(32) # Giá trị ngẫu nhiên 32 byte
-    print(f"\nBob: Tao Challenge ngau nhien = {challenge_data.hex()}...")
+    # --- Bước 2: Bob tạo Challenge ---
+    challenge = os.urandom(32)
+    print(f"\n=== Bước 2: Bob tạo Challenge ===")
+    print(f"Challenge (hex) = {challenge.hex()}")
 
-    # --- 3. ALICE: Tạo Response (Chữ ký) ---
-    # Buoc 3a: Hash Challenge
-    challenge_hash_digest = hashlib.sha256(challenge_data).digest()
-    hash_int = b2i(challenge_hash_digest)
-    
-    # Buoc 3b: Ky (Decrypt) Hash bang khoa BI MAT
-    # Response = Hash(Challenge)^d mod n
-    signature_int = rsa_sign(hash_int, alice_priv_key)
-    digital_signature_response = i2b(signature_int)
-    
-    print("Alice: Ky Challenge (Response) va gui lai cho Bob.")
+    # --- Bước 3: Alice ký Challenge (tạo Response) ---
+    print("\n=== Bước 3: Alice ký Challenge ===")
+    # Hash challenge
+    challenge_hash = hashlib.sha256(challenge).digest()
+    hash_int = bytes_to_integer(challenge_hash)
+    print(f"Hash của Challenge (int) = {hash_int}")
 
-    # --- 4. BOB: Xác minh Response ---
-    bob_received_signature = digital_signature_response
+    # Ký bằng khóa bí mật (sử dụng CRT)
+    signature_int = rsa_decrypt_integer_crt(hash_int, priv)
+    signature_bytes = integer_to_bytes(signature_int)
+    print(f"Signature (int) = {signature_int}")
+    print(f"Signature (hex) = {signature_bytes.hex()}")
 
-    # Buoc 4a: Bob Hash lai Challenge ban dau (de so sanh)
-    bob_hash_int = b2i(hashlib.sha256(challenge_data).digest())
-    
-    # Buoc 4b: Bob Giai ma (Encrypt) chu ky bang khoa CONG KHAI
-    # Verified Hash = Signature^e mod n
-    sig_int = b2i(bob_received_signature)
-    verified_hash_int = rsa_verify(sig_int, alice_pub_key) 
+    # --- Bước 4: Bob nhận Response và xác minh ---
+    print("\n=== Bước 4: Bob xác minh Response ===")
+    # Hash lại challenge
+    bob_hash_int = bytes_to_integer(hashlib.sha256(challenge).digest())
+    print(f"Hash gốc Challenge (int) = {bob_hash_int}")
 
-    # Buoc 4c: So sanh
-    is_authenticated = (verified_hash_int == bob_hash_int)
+    # Giải mã signature bằng khóa công khai
+    verified_hash_int = rsa_encrypt_integer(signature_int, pub)
+    print(f"Hash giải mã từ Signature (int) = {verified_hash_int}")
 
-    print("\nBob: Hash tu Challenge goc =", bob_hash_int)
-    print("Bob: Hash giai ma tu Response =", verified_hash_int)
-    
-    if is_authenticated:
-        print("\n Bob: Alice da xung danh HOP LE (Challenge–Response THANH CONG).")
+    # So sánh
+    if verified_hash_int == bob_hash_int:
+        print("\nKết quả: Alice đã xưng danh HỢP LỆ (Challenge–Response thành công).")
     else:
-        print("\n Bob: Xac thuc THAT BAI.")
+        print("\nKết quả: Xác thực THẤT BẠI.")
 
 if __name__ == "__main__":
-    demo_auth_challenge_response()
+    demo_rsa_challenge_response()
