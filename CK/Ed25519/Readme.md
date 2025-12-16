@@ -1,15 +1,13 @@
-# Generate keypair
+# Ed25519 thuần Python demo
 
-Command: python cli.py keygen --out-dir keys --password yourpass
+## 1. Sinh khóa
+python cli.py keygen --seed-file mypri.seed --pub-file mypub.key
 
-# Sign a file
+## 2. Ký thông điệp
+python cli.py sign --priv mypri.seed --infile message.txt --sigfile message.sig
 
-Command: python cli.py sign --private keys/ed25519_private.pem --password yourpass --input message.txt --output message.sig
+## 3. Xác minh chữ ký
+python cli.py verify --pub mypub.key --infile message.txt --sigfile message.sig
 
-# Verify signature
-
-Command: python cli.py verify --public keys/ed25519_public.pem --input message.txt --signature message.sig
-
-# Stream via pipes
-
-Command: cat message.txt | python cli.py sign --private keys/ed25519_private.pem --password yourpass > message.sig
+## 4. Demo trực tiếp
+python demo.py

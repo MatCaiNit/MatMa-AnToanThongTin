@@ -1,41 +1,39 @@
-# sign.py (Logic Ký & Xác minh)
+from utils import sha512, scalar_mult, encode_point, decode_point, ed_add, B, l
 
-from cryptography.hazmat.primitives.asymmetric import ed25519
-import hashlib
-import typing
+def log(msg, value):
+    print(f"[LOG] {msg}: {value}")
 
-def create_signature(private_key_object: ed25519.Ed25519PrivateKey, message_data: bytes) -> bytes:
-    """Trả về chữ ký 64-byte cho dữ liệu thông điệp."""
-    return private_key_object.sign(message_data)
+def sign(a, A, message_bytes):
+    log("Message bytes", message_bytes.hex())
+    r = int.from_bytes(sha512(a.to_bytes(32,"little") + message_bytes), "little") % l
+    log("Nonce r", r)
+    R = scalar_mult(B, r)
+    log("Point R", R)
+    R_enc = encode_point(R)
+    log("Encoded R", R_enc.hex())
 
-def verify_signature(public_key_object: ed25519.Ed25519PublicKey, message_data: bytes, signature_data: bytes) -> bool:
-    """Trả về True nếu chữ ký hợp lệ, False nếu không."""
-    try:
-        public_key_object.verify(signature_data, message_data)
-        return True
-    except Exception:
-        return False
+    k = int.from_bytes(sha512(R_enc + encode_point(A) + message_bytes), "little") % l
+    log("Challenge k", k)
+    S = (r + k*a) % l
+    log("Scalar S", S)
+    signature = R_enc + S.to_bytes(32,"little")
+    log("Final signature", signature.hex())
+    return signature
 
-# Ký/Xác minh cho dữ liệu lớn (Stream/File)
-
-def create_stream_signature(private_key_object: ed25519.Ed25519PrivateKey, stream_iterator: typing.Iterable[bytes], hash_algorithm="sha512") -> bytes:
-    """Ký dữ liệu lớn bằng cách hash nội dung và ký lên bản tóm tắt (digest)."""
-    hasher = hashlib.new(hash_algorithm)
-    for chunk in stream_iterator:
-        hasher.update(chunk)
-    data_digest = hasher.digest()
-    # Ký lên digest, không phải toàn bộ stream
-    return private_key_object.sign(data_digest)
-
-def verify_stream_signature(public_key_object: ed25519.Ed25519PublicKey, stream_iterator: typing.Iterable[bytes], signature_data: bytes, hash_algorithm="sha512") -> bool:
-    """Xác minh chữ ký trên bản tóm tắt (digest) của dữ liệu stream."""
-    hasher = hashlib.new(hash_algorithm)
-    for chunk in stream_iterator:
-        hasher.update(chunk)
-    data_digest = hasher.digest()
-    
-    try:
-        public_key_object.verify(signature_data, data_digest)
-        return True
-    except Exception:
-        return False
+def verify(A, message_bytes, signature):
+    R_enc = signature[:32]
+    S = int.from_bytes(signature[32:], "little")
+    R = decode_point(R_enc)
+    log("Decoded R", R)
+    log("Scalar S from signature", S)
+    k = int.from_bytes(sha512(R_enc + encode_point(A) + message_bytes), "little") % l
+    log("Challenge k", k)
+    SB = scalar_mult(B, S)
+    kA = scalar_mult(A, k)
+    log("Point SB", SB)
+    log("Point k*A", kA)
+    R_plus_kA = ed_add(R, kA)
+    log("Point R + k*A", R_plus_kA)
+    valid = SB == R_plus_kA
+    log("Signature valid?", valid)
+    return valid
